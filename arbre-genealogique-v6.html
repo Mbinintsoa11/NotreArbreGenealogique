@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Notre Arbre Généalogique</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6fb;
+      padding: 40px;
+    }
+
+    h1 { text-align: center; color: #1f2a44; }
+
+    #retour {
+      display: none;
+      margin: 0 auto 20px auto;
+      width: fit-content;
+      background: #1f2a44;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #retour:hover { background: #2f6fed; }
+
+    .section-titre {
+      text-align: center;
+      color: #8a93a6;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 30px 0 10px 0;
+    }
+
+    .generation { text-align: center; margin-bottom: 20px; }
+
+    .personne {
+      position: relative;
+      display: inline-block;
+      width: 200px;
+      background-color: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border-top: 5px solid #8a93a6;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .personne:hover { transform: translateY(-4px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
+    .personne.homme  { border-top-color: #2f6fed; }
+    .personne.femme  { border-top-color: #e0559b; }
+
+    .personne img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #e9ebf1; /* visible tant qu'il n'y a pas de vraie photo */
+    }
+
+    .nom { font-size: 16px; font-weight: bold; color: #1f2a44; margin-top: 10px; }
+
+    .badge-genre {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+      color: white;
+    }
+    .badge-genre.homme { background: #2f6fed; }
+    .badge-genre.femme { background: #e0559b; }
+
+    .btn-modifier {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #f4f6fb;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn-modifier:hover { background: #e0e4ee; }
+
+    .vide { color: #8a93a6; font-style: italic; text-align: center; }
+
+    .descriptifs { max-width: 700px; margin: 0 auto 10px auto; }
+    .descriptif-carte {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-align: left;
+    }
+    .descriptif-carte .nom-descriptif { font-weight: bold; color: #1f2a44; margin-bottom: 4px; }
+    .descriptif-carte .texte { color: #444; font-size: 14px; line-height: 1.4; }
+
+    .bloc-ajout { max-width: 400px; margin: 20px auto; text-align: center; }
+    .bloc-ajout summary { cursor: pointer; color: #2f6fed; font-weight: bold; font-size: 14px; padding: 8px; }
+    .bloc-ajout form {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-align: left;
+    }
+    .bloc-ajout label, #modal-edition label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #1f2a44;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .bloc-ajout input, .bloc-ajout select, .bloc-ajout textarea,
+    #modal-edition input, #modal-edition select, #modal-edition textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d9dce3;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    .bloc-ajout button {
+      margin-top: 14px;
+      width: 100%;
+      background: #17a673;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .bloc-ajout button:hover { background: #128a5f; }
+
+    .apercu-photo {
+      display: block;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 8px auto 0 auto;
+      background: #e9ebf1;
+    }
+
+    #reinitialiser {
+      display: block;
+      margin: 40px auto 0 auto;
+      background: none;
+      border: none;
+      color: #d64545;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    #fond-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(31,42,68,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #fond-modal.visible { display: flex; }
+
+    #modal-edition {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 380px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    #modal-edition h3 { margin-top: 0; color: #1f2a44; font-size: 16px; }
+
+    .boutons-modal { display: flex; gap: 10px; margin-top: 16px; }
+    .boutons-modal button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    #btn-enregistrer { background: #2f6fed; color: white; }
+    #btn-enregistrer:hover { background: #1f5bd0; }
+    #btn-annuler { background: #e9ebf1; color: #1f2a44; }
+    #btn-annuler:hover { background: #d9dce3; }
+
+    .avertissement-stockage {
+      max-width: 500px;
+      margin: 0 auto 20px auto;
+      background: #fff8e6;
+      border: 1px solid #f0d98c;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #7a6420;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Notre Arbre Généalogique</h1>
+  <div id="chargement-initial" style="text-align:center; padding:60px; font-size:18px; color:#8a93a6;">Andraso vetivety...</div>
+  <button id="retour" onclick="reculer()">&larr; Revenir en arrière</button>
+
+  <div class="section-titre">Couple</div>
+  <div id="zone-couple" class="generation"></div>
+
+  <div id="zone-ajout-conjoint"></div>
+
+  <div class="section-titre">À propos</div>
+  <div id="zone-descriptifs" class="descriptifs"></div>
+
+  <div class="section-titre">Enfants</div>
+  <div id="zone-enfants" class="generation"></div>
+
+  <div id="zone-ajout-enfant"></div>
+
+
+  <button id="reinitialiser" onclick="reinitialiser()">Réinitialiser toutes les données</button>
+
+  <div id="fond-modal" onclick="if(event.target===this) fermerModal()">
+    <div id="modal-edition">
+      <h3>Modifier le profil</h3>
+      <form onsubmit="enregistrerEdition(event)">
+        <label>Nom complet</label>
+        <input type="text" id="edit-nom" required>
+
+        <label>Genre</label>
+        <select id="edit-genre">
+          <option value="homme">Homme</option>
+          <option value="femme">Femme</option>
+        </select>
+
+        <label>Description</label>
+        <textarea id="edit-description" rows="3"></textarea>
+
+        <label>Photo</label>
+        <input type="file" id="edit-photo" accept="image/*" onchange="previsualiser(this, 'apercu-edit')">
+        <img id="apercu-edit" class="apercu-photo" style="display:none;">
+
+        <div class="boutons-modal">
+          <button type="button" id="btn-annuler" onclick="fermerModal()">Annuler</button>
+          <button type="submit" id="btn-enregistrer">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       1. DONNÉES PAR DÉFAUT
+       -----------------------------------------------------------
+       Nouveau champ : "photo" (vide par défaut, contiendra une
+       image encodée en texte une fois qu'on en ajoute une)
+       ========================================================= */
+    const donneesParDefaut = {
+      p1: { nom: "Eugene Martin RAFAMANTANANTSOA", genre: "homme", photo: "",
+            description: "Patriarche de la famille, ancien enseignant.",
+            conjoint: "p2", enfants: ["p3","p4","p5","p6","p7","p8"] },
+
+      p2: { nom: "Justine RAHARIVONINTSOA", genre: "femme", photo: "",
+            description: "Matriarche de la famille.",
+            conjoint: "p1", enfants: [] },
+
+      p3: { nom: "Hantanirina Yolande RAHARIVONINTSOA", genre: "femme", photo: "",
+            description: "", conjoint: null, enfants: [] },
+
+      p4: { nom: "Herinirina RAFAMANTANANTSOA", genre: "homme", photo: "",
+            description: "", conjoint: null, enfants: [] },
+
+      p5: { nom: "Soloniaina RAFAMANTANANTSOA", genre: "homme", photo: "",
+            description: "", conjoint: null, enfants: [] },
+
+      p6: { nom: "Fanja Felisoa RAFAMANTANANTSOA", genre: "femme", photo: "",
+            description: "", conjoint: null, enfants: [] },
+
+      p7: { nom: "Rivolanto RAFAMANTANANTSOA", genre: "homme", photo: "",
+            description: "", conjoint: null, enfants: [] },
+
+      p8: { nom: "Onintsoa RAFAMANTANANTSOA", genre: "femme", photo: "",
+            description: "", conjoint: null, enfants: [] }
+    };
+
+    /* =========================================================
+       2. CHARGEMENT / SAUVEGARDE
+       ========================================================= */
+        const ADRESSE_ROBOT = "https://script.google.com/macros/s/AKfycbzhza5-Vbpl1NLBR0Nakigjic6aDIePR0-u52_fQhU75ptzACB0sezVQ4kFCGQESqU-hw/exec?cle=Toliara601";
+
+    async function chargerDonnees() {
+      try {
+        const reponse = await fetch(ADRESSE_ROBOT);
+        const donnees = await reponse.json();
+
+        if (!donnees || !donnees.p1) {
+          return JSON.parse(JSON.stringify(donneesParDefaut));
+        }
+        return donnees;
+      } catch (erreur) {
+        alert("Impossible de contacter le serveur. Vérifie ta connexion internet.");
+        return JSON.parse(JSON.stringify(donneesParDefaut));
+      }
+    }
+
+    async function sauvegarderDonnees() {
+      try {
+        await fetch(ADRESSE_ROBOT, {
+          method: "POST",
+          body: JSON.stringify(personnes)
+        });
+      } catch (erreur) {
+        alert("Impossible de sauvegarder sur le serveur. Vérifie ta connexion internet.");
+      }
+    }
+
+    function reinitialiser() {
+      const confirmation = confirm("Es-tu sûr(e) de vouloir tout effacer et repartir des données de départ ?");
+      if (confirmation) {
+        personnes = JSON.parse(JSON.stringify(donneesParDefaut));
+        sauvegarderDonnees();
+        location.reload();
+      }
+    }
+
+    function reinitialiser() {
+      const confirmation = confirm("Es-tu sûr(e) de vouloir tout effacer et repartir des données de départ ?");
+      if (confirmation) {
+        localStorage.removeItem(CLE_STOCKAGE);
+        location.reload();
+      }
+    }
+
+    let personnes = {};
+
+    /* =========================================================
+       3. ÉTAT DE NAVIGATION
+       ========================================================= */
+    let racineActuelle = "p1";
+    let historique = [];
+    let idEnEdition = null;
+
+    /* =========================================================
+       4. GÉNÉRER UN NOUVEL IDENTIFIANT UNIQUE
+       ========================================================= */
+    function nouvelId() {
+      const numeros = Object.keys(personnes).map(id => parseInt(id.replace("p", "")));
+      const maxNumero = Math.max(...numeros);
+      return "p" + (maxNumero + 1);
+    }
+
+    /* =========================================================
+       5. GESTION DES PHOTOS
+       -----------------------------------------------------------
+       - previsualiser() : affiche un aperçu immédiat dès que
+         l'utilisateur choisit un fichier, et le redimensionne
+         pour ne pas prendre trop de place en mémoire.
+       - Le résultat est stocké comme du texte ("base64"), un
+         format qui permet d'écrire une image sous forme de texte.
+       ========================================================= */
+    function previsualiser(input, idApercu) {
+      const fichier = input.files[0];
+      if (!fichier) return;
+
+      redimensionnerImage(fichier, 200, 200, (imageReduite) => {
+        const apercu = document.getElementById(idApercu);
+        apercu.src = imageReduite;
+        apercu.style.display = "block";
+        input.dataset.resultat = imageReduite; // on garde le résultat pour l'enregistrement
+      });
+    }
+
+    function redimensionnerImage(fichier, largeurMax, hauteurMax, callback) {
+      const lecteur = new FileReader();
+      lecteur.onload = function (evenement) {
+        const image = new Image();
+        image.onload = function () {
+          let { width, height } = image;
+
+          if (width > largeurMax || height > hauteurMax) {
+            const ratio = Math.min(largeurMax / width, hauteurMax / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+
+          // qualité 0.7 = bon compromis taille / netteté
+          callback(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        image.src = evenement.target.result;
+      };
+      lecteur.readAsDataURL(fichier);
+    }
+
+    /* =========================================================
+       6. CARTE "PERSONNE"
+       ========================================================= */
+    function carteHTML(id) {
+      const personne = personnes[id];
+      const classeGenre = personne.genre || "";
+      const libelleGenre = personne.genre === "homme" ? "Homme"
+                          : personne.genre === "femme" ? "Femme"
+                          : "";
+      const source = personne.photo && personne.photo !== ""
+        ? personne.photo
+        : "https://placehold.co/100x100?text=Photo";
+
+      return `
+        <div class="personne ${classeGenre}" onclick="allerVers('${id}')">
+          <button class="btn-modifier" onclick="event.stopPropagation(); ouvrirEdition('${id}')" title="Modifier">✏️</button>
+          <img src="${source}" alt="Photo de ${personne.nom}">
+          <div class="nom">${personne.nom}</div>
+          ${libelleGenre ? `<div class="badge-genre ${classeGenre}">${libelleGenre}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function descriptifHTML(id) {
+      const personne = personnes[id];
+      const texte = personne.description && personne.description.trim() !== ""
+        ? personne.description
+        : "Pas encore de description renseignée.";
+      return `
+        <div class="descriptif-carte">
+          <div class="nom-descriptif">${personne.nom}</div>
+          <div class="texte">${texte}</div>
+        </div>
+      `;
+    }
+
+    /* =========================================================
+       7. FORMULAIRES D'AJOUT (avec champ photo)
+       ========================================================= */
+    function formulaireConjointHTML() {
+      const personne = personnes[racineActuelle];
+      if (personne.conjoint) return "";
+      return `
+        <details class="bloc-ajout">
+          <summary>+ Ajouter un(e) conjoint(e) à ${personne.nom}</summary>
+          <form onsubmit="ajouterConjoint(event)">
+            <label>Nom complet</label>
+            <input type="text" id="nom-conjoint" required>
+            <label>Genre</label>
+            <select id="genre-conjoint">
+              <option value="homme">Homme</option>
+              <option value="femme">Femme</option>
+            </select>
+            <label>Description (optionnel)</label>
+            <textarea id="description-conjoint" rows="2"></textarea>
+            <label>Photo (optionnel)</label>
+            <input type="file" id="photo-conjoint" accept="image/*" onchange="previsualiser(this, 'apercu-conjoint')">
+            <img id="apercu-conjoint" class="apercu-photo" style="display:none;">
+            <button type="submit">Ajouter</button>
+          </form>
+        </details>
+      `;
+    }
+
+    function formulaireEnfantHTML() {
+      return `
+        <details class="bloc-ajout">
+          <summary>+ Ajouter un enfant</summary>
+          <form onsubmit="ajouterEnfant(event)">
+            <label>Nom complet</label>
+            <input type="text" id="nom-enfant" required>
+            <label>Genre</label>
+            <select id="genre-enfant">
+              <option value="homme">Homme</option>
+              <option value="femme">Femme</option>
+            </select>
+            <label>Description (optionnel)</label>
+            <textarea id="description-enfant" rows="2"></textarea>
+            <label>Photo (optionnel)</label>
+            <input type="file" id="photo-enfant" accept="image/*" onchange="previsualiser(this, 'apercu-enfant')">
+            <img id="apercu-enfant" class="apercu-photo" style="display:none;">
+            <button type="submit">Ajouter</button>
+          </form>
+        </details>
+      `;
+    }
+
+    /* =========================================================
+       8. DESSINER L'ÉCRAN ACTUEL
+       ========================================================= */
+    function dessiner() {
+      const personne = personnes[racineActuelle];
+      const zoneCouple = document.getElementById("zone-couple");
+      const zoneDescriptifs = document.getElementById("zone-descriptifs");
+      const zoneEnfants = document.getElementById("zone-enfants");
+      const zoneAjoutConjoint = document.getElementById("zone-ajout-conjoint");
+      const zoneAjoutEnfant = document.getElementById("zone-ajout-enfant");
+      const boutonRetour = document.getElementById("retour");
+
+      const idsCouple = [racineActuelle];
+      if (personne.conjoint) idsCouple.push(personne.conjoint);
+      zoneCouple.innerHTML = idsCouple.map(carteHTML).join("");
+
+      zoneDescriptifs.innerHTML = idsCouple.map(descriptifHTML).join("");
+
+      let listeEnfants = personne.enfants;
+      if (listeEnfants.length === 0 && personne.conjoint) {
+        listeEnfants = personnes[personne.conjoint].enfants;
+      }
+      zoneEnfants.innerHTML = listeEnfants.length === 0
+        ? '<p class="vide">Aucun enfant renseigné pour l\'instant.</p>'
+        : listeEnfants.map(carteHTML).join("");
+
+      zoneAjoutConjoint.innerHTML = formulaireConjointHTML();
+      zoneAjoutEnfant.innerHTML = formulaireEnfantHTML();
+
+      boutonRetour.style.display = historique.length > 0 ? "block" : "none";
+    }
+
+    /* =========================================================
+       9. AJOUTER CONJOINT / ENFANT (avec photo)
+       ========================================================= */
+    function ajouterConjoint(event) {
+      event.preventDefault();
+      const nom = document.getElementById("nom-conjoint").value;
+      const genre = document.getElementById("genre-conjoint").value;
+      const description = document.getElementById("description-conjoint").value;
+      const photo = document.getElementById("photo-conjoint").dataset.resultat || "";
+
+      const id = nouvelId();
+      personnes[id] = { nom, genre, photo, description, conjoint: racineActuelle, enfants: [] };
+      personnes[racineActuelle].conjoint = id;
+      sauvegarderDonnees();
+      dessiner();
+    }
+
+    function ajouterEnfant(event) {
+      event.preventDefault();
+      const nom = document.getElementById("nom-enfant").value;
+      const genre = document.getElementById("genre-enfant").value;
+      const description = document.getElementById("description-enfant").value;
+      const photo = document.getElementById("photo-enfant").dataset.resultat || "";
+
+      const id = nouvelId();
+      personnes[id] = { nom, genre, photo, description, conjoint: null, enfants: [] };
+      personnes[racineActuelle].enfants.push(id);
+      sauvegarderDonnees();
+      dessiner();
+    }
+
+    /* =========================================================
+       10. MODIFIER UNE PERSONNE (avec photo)
+       ========================================================= */
+    function ouvrirEdition(id) {
+      idEnEdition = id;
+      const personne = personnes[id];
+
+      document.getElementById("edit-nom").value = personne.nom;
+      document.getElementById("edit-genre").value = personne.genre || "homme";
+      document.getElementById("edit-description").value = personne.description || "";
+
+      const inputPhoto = document.getElementById("edit-photo");
+      inputPhoto.value = ""; // on vide le champ fichier
+      delete inputPhoto.dataset.resultat;
+
+      const apercu = document.getElementById("apercu-edit");
+      if (personne.photo && personne.photo !== "") {
+        apercu.src = personne.photo;
+        apercu.style.display = "block";
+      } else {
+        apercu.style.display = "none";
+      }
+
+      document.getElementById("fond-modal").classList.add("visible");
+    }
+
+    function fermerModal() {
+      document.getElementById("fond-modal").classList.remove("visible");
+      idEnEdition = null;
+    }
+
+    function enregistrerEdition(event) {
+      event.preventDefault();
+      if (!idEnEdition) return;
+
+      personnes[idEnEdition].nom = document.getElementById("edit-nom").value;
+      personnes[idEnEdition].genre = document.getElementById("edit-genre").value;
+      personnes[idEnEdition].description = document.getElementById("edit-description").value;
+
+      // On ne remplace la photo QUE si une nouvelle a été choisie
+      const inputPhoto = document.getElementById("edit-photo");
+      if (inputPhoto.dataset.resultat) {
+        personnes[idEnEdition].photo = inputPhoto.dataset.resultat;
+      }
+
+      sauvegarderDonnees();
+      fermerModal();
+      dessiner();
+    }
+
+    /* =========================================================
+       11. NAVIGATION
+       ========================================================= */
+    function allerVers(id) {
+      if (id === racineActuelle || id === personnes[racineActuelle].conjoint) return;
+      historique.push(racineActuelle);
+      racineActuelle = id;
+      dessiner();
+    }
+
+    function reculer() {
+      if (historique.length > 0) {
+        racineActuelle = historique.pop();
+        dessiner();
+      }
+    }
+
+    async function demarrerApplication() {
+  personnes = await chargerDonnees();
+  document.getElementById("chargement-initial").style.display = "none";
+  dessiner();
+}
+
+demarrerApplication();
+  </script>
+
+</body>
+</html>
