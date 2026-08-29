@@ -220,7 +220,15 @@
   </style>
 </head>
 <body>
+<div id="ecran-mot-de-passe" style="max-width:320px; margin:100px auto; text-align:center; background:white; padding:30px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+  <h2 style="color:#1f2a44;">Accès privé</h2>
+  <p style="color:#8a93a6; font-size:14px;">Entre le mot de passe familial pour continuer.</p>
+  <input type="password" id="saisie-mot-de-passe" placeholder="Mot de passe" style="width:100%; padding:10px; border:1px solid #d9dce3; border-radius:6px; font-size:14px; box-sizing:border-box;"onkeydown="if(event.key==='Enter') verifierMotDePasse()">
+  <button onclick="verifierMotDePasse()" style="margin-top:12px; width:100%; background:#2f6fed; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Entrer</button>
+  <p id="message-erreur-mdp" style="color:#d64545; font-size:13px; display:none;">Mot de passe incorrect.</p>
+</div>
 
+<div id="contenu-principal" style="display:none;">
   <h1>Notre Arbre Généalogique</h1>
   <div id="chargement-initial" style="text-align:center; padding:60px; font-size:18px; color:#8a93a6;">Andraso vetivety...</div>
   <button id="retour" onclick="reculer()">&larr; Revenir en arrière</button>
@@ -634,6 +642,18 @@
       }
     }
 
+    const MOT_DE_PASSE_FAMILLE = "Toliara601";
+
+function verifierMotDePasse() {
+  const saisie = document.getElementById("saisie-mot-de-passe").value;
+
+  if (saisie === MOT_DE_PASSE_FAMILLE) {
+    document.getElementById("ecran-mot-de-passe").style.display = "none";
+    document.getElementById("contenu-principal").style.display = "block";
+  } else {
+    document.getElementById("message-erreur-mdp").style.display = "block";
+  }
+}
     async function demarrerApplication() {
   personnes = await chargerDonnees();
   document.getElementById("chargement-initial").style.display = "none";
@@ -642,6 +662,7 @@
 
 demarrerApplication();
   </script>
+  </div>
 
 </body>
 </html>
